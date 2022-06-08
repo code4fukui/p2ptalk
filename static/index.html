@@ -1,0 +1,101 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>p2ptalk by WebRTC</title>
+<style>
+body {
+  font-family: sans-serif;
+}
+table {
+  border: 1px solid #000;
+  border-collapse: collapse;
+}
+table td, table th {
+  border: 1px solid #000;
+  padding: 5px; 
+}
+textarea {
+  width: 80vw;
+  height: 10em;
+}
+</style>
+</head>
+<body>
+<h1>p2ptalk by WebRTC</h1>
+
+<div id=sender style="display:none">
+<label><input type=checkbox id=chkvideo checked>video</label>
+<label><input type=checkbox id=chkaudio checked>audio</label>
+<button id=btnstart>call</button>
+<input id=recv><br>
+</div>
+
+<div id=divstatus></div>
+<video id="local_video" autoplay style="width: 320px; height: 240px;"></video>
+<video id="remote_video" autoplay style="width: 320px; height: 240px;"></video>
+<div>
+  <input type=text id=chat><button id=btnsend>send</button><br>
+    <textarea id=log></textarea>
+</div>
+
+<hr>
+<a href=https://github.com/code4fukui/p2ptalk>src on GitHub</a><br>
+
+<script type="module">
+import { createConnection, startVideo, createOffer, receiveRemoteSdpForOffer, sendDataChannel, setDataChannelOnMessage } from "./webrtc.js";
+import { api } from "./api.js";
+import { sleep } from "https://js.sabae.cc/sleep.js";
+
+const setupChat = () => {
+  btnsend.onclick = () => {
+    const bin = new TextEncoder().encode(chat.value);
+    sendDataChannel(bin);
+    log.value += "< " + chat.value + "\n"
+    chat.value = "";
+  };
+  setDataChannelOnMessage((msg) => log.value += "> " + new TextDecoder().decode(msg) + "\n");
+};
+
+onload = async () => {
+  const id = document.location.hash.substring(1);
+  if (!id) {
+    sender.style.display = "block";
+    return;
+  }
+  const req = await api("./api/get", id);
+  if (!req) {
+    alert("not found...");
+    return;
+  }
+  const sdp = await createConnection(req.config, remote_video, local_video, req.sdp);
+  console.log(sdp);
+  await api("/api/set", { id: id + "res", sdp });
+  divstatus.textContent = "connected";
+  setupChat();
+};
+
+btnstart.onclick = async () => {
+  const config = { video: chkvideo.checked, audio: chkaudio.checked };
+  const sdp = await createConnection(config, remote_video, local_video);
+  const id = Math.random() * 10000 | 0;
+  console.log(sdp);
+  await api("./api/set", { id, sdp, config });
+  recv.value = document.location + "#" + id;
+
+  const idres = id + "res";
+  let res = null;
+  for (;;) {
+    res = await api("./api/get", idres);
+    if (res) {
+      await api("./api/remove", [id, idres]);
+      break;
+    }
+    await sleep(500);
+  }
+  await receiveRemoteSdpForOffer(res.sdp);
+  divstatus.textContent = "connected";
+  setupChat();
+};
+</script>
+
+</body>
+</html>
+
