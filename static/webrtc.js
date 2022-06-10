@@ -4,7 +4,7 @@ let dataChannel = null;
 export const createConnection = async (streamconfig, remoteVideo, localVideo, sdp) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const config = { "iceServers": [] }; // STUN servers
+      const config = { "iceServers": [] }; // STUN/TURN servers
       const pc = new RTCPeerConnection(config);
     
       pc.ontrack = (e) => { // 通信相手のトラック

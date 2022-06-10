@@ -1,0 +1,92 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>sdptest by WebRTC</title>
+<style>
+body {
+  font-family: sans-serif;
+}
+table {
+  border: 1px solid #000;
+  border-collapse: collapse;
+}
+table td, table th {
+  border: 1px solid #000;
+  padding: 5px; 
+}
+textarea {
+  width: 80vw;
+  height: 10em;
+}
+button {
+  margin: .5em 0;
+}
+</style>
+</head>
+<body>
+<h1>sdptest by WebRTC</h1>
+
+<div id=divoffer>
+offer<br>
+<div>
+  <label><input type=checkbox id=chkvideo>video</label>
+  <label><input type=checkbox id=chkaudio>audio</label><br>
+  <button id=btnstart>A: create offer</button>
+</div>
+<textarea id=taoffer></textarea><br>
+</div>
+<div id=divanswer>
+answer<br>
+<button id=btnanswer>B: create answer from offer</button><br>
+<textarea id=taanswer></textarea><br>
+<button id=btnaccept>A: accept answer</button>
+</div>
+
+<div id=divstatus></div>
+<video id="local_video" autoplay style="width: 320px; height: 240px;"></video>
+<video id="remote_video" autoplay style="width: 320px; height: 240px;"></video>
+<div>
+  <input type=text id=chat><button id=btnsend>send</button><br>
+    <textarea id=log></textarea>
+</div>
+
+<hr>
+<a href=https://github.com/code4fukui/p2ptalk>src on GitHub</a><br>
+
+<script type="module">
+import { createConnection, startVideo, createOffer, receiveRemoteSdpForOffer, sendDataChannel, setDataChannelOnMessage } from "./webrtc.js";
+
+btnanswer.onclick = async () => {
+  const reqsdp = taoffer.value;
+  const config = { video: chkvideo.checked, audio: chkaudio.checked };
+  const sdp = await createConnection(config, remote_video, local_video, reqsdp);
+  console.log(sdp);
+  taanswer.value = sdp;
+  setupChat();
+};
+
+btnstart.onclick = async () => {
+  const config = { video: chkvideo.checked, audio: chkaudio.checked };
+  const sdp = await createConnection(config, remote_video, local_video);
+  taoffer.value = sdp;
+};
+
+btnaccept.onclick = async () => {
+  const ressdp = taanswer.value;
+  await receiveRemoteSdpForOffer(ressdp);
+  divstatus.textContent = "connected";
+  setupChat();
+};
+
+const setupChat = () => {
+  btnsend.onclick = () => {
+    const bin = new TextEncoder().encode(chat.value);
+    sendDataChannel(bin);
+    log.value += "< " + chat.value + "\n"
+    chat.value = "";
+  };
+  setDataChannelOnMessage((msg) => log.value += "> " + new TextDecoder().decode(msg) + "\n");
+};
+</script>
+
+</body>
+</html>
+
