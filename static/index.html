@@ -23,14 +23,14 @@ textarea {
 
 <div id=sender style="display:none">
 <label><input type=checkbox id=chkvideo checked>video</label>
-<label><input type=checkbox id=chkaudio checked>audio</label>
+<label><input type=checkbox id=chkaudio x-checked>audio</label>
 <button id=btnstart>call</button>
 <input id=recv><br>
 </div>
 
 <div id=divstatus></div>
-<video id="local_video" autoplay style="width: 320px; height: 240px;"></video>
-<video id="remote_video" autoplay style="width: 320px; height: 240px;"></video>
+<video id="local_video" playsinline=true autoplay style="width: 320px; height: 240px;"></video>
+<video id="remote_video" playsinline=true autoplay style="width: 320px; height: 240px;"></video>
 <div>
   <input type=text id=chat><button id=btnsend>send</button><br>
     <textarea id=log></textarea>
