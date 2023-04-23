@@ -4,7 +4,12 @@ let dataChannel = null;
 export const createConnection = async (streamconfig, remoteVideo, localVideo, sdp) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const config = { "iceServers": [] }; // STUN/TURN servers
+      let config = {};
+      try {
+        config = await (await fetch("./webrtc_config.json")).json();
+      } catch (e) {
+        console.log("no config: webrtc_config.json");
+      }
       const pc = new RTCPeerConnection(config);
     
       pc.ontrack = (e) => { // 通信相手のトラック
@@ -14,7 +19,7 @@ export const createConnection = async (streamconfig, remoteVideo, localVideo, sd
       };
     
       pc.onicecandidate = (e) => { // 通信経路の候補
-        console.log("called: onicecandidate");
+        console.log("called: onicecandidate", pc.localDescription.sdp);
         if (!e.candidate) { // 通信経路収集完了
           console.log('completed: ICE candidate');
           resolve(pc.localDescription.sdp);
@@ -87,6 +92,14 @@ export const startVideo = async (streamconfig, localVideo) => {
       echoCancellation: true,
       noiseSuppression: true,
     };
+  }
+  const devs = await navigator.mediaDevices.enumerateDevices();
+  const dev = devs.find(d => d.kind == "videoinput" && d.label.toLowerCase().indexOf("camera") >= 0 && d.label.toLowerCase().indexOf("virtual") == -1);
+  if (dev) {
+    if (typeof streamconfig.video == "boolean") {
+      streamconfig.video = {};
+    }
+    streamconfig.video.deviceId = dev.deviceId;
   }
   const stream = await navigator.mediaDevices.getUserMedia(streamconfig);
   stream.getTracks().forEach((track) => {
