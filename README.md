@@ -1,4 +1,4 @@
-# poptalk
+# p2ptalk
 
 ## simple test
 
