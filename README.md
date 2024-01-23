@@ -32,4 +32,6 @@ static/webrtc_config.json if use STUN/TURN
 ## blog
 
 - https://fukuno.jig.jp/3605
+- https://fukuno.jig.jp/3924
+
 
